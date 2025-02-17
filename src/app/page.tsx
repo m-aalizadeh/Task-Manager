@@ -1,58 +1,74 @@
 "use client";
-import React, { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import TodoList from "../components/TodoList";
-import { Todo } from "../types/todo";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Task } from "../types/todo";
 
-const Home: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTodo, setNewTodo] = useState("");
+export default function TaskPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  // const tasks: Task[] = JSON.parse(localStorage.getItem("tasks") || "[]");
 
-  const addTodo = () => {
-    if (newTodo.trim() === "") return;
-    const todo: Todo = {
-      id: uuidv4(),
-      text: newTodo,
-      completed: false,
-    };
-    setTodos([...todos, todo]);
-    setNewTodo("");
+  useEffect(() => {
+    setTasks(JSON.parse(localStorage.getItem("tasks") || "[]"));
+  }, []);
+
+  const onDelete = (id: string) => {
+    const updatedTasks = tasks.filter((task) => task.id !== id);
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
-  const deleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  const onToggle = (id: string) => {
+    const updatedTasks = tasks.map((task) =>
+      task.id === id ? { ...task, completed: !task.completed } : task
+    );
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
-  const toggleTodo = (id: string) => [
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    ),
-  ];
   return (
     <main className="flex min-h-screen flex-col items-center p-24 bg-gray-100">
-      <h1 className="text-4xl font-bold text-blue-600 mb-8">Todo App</h1>
-      <div className="w-full max-w-md">
-        <div className="flex space-x-2 mb-4">
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && addTodo()}
-            placeholder="Add a new task"
-            className="flex-1 p-2 border border-gray-300 rounded"
-          />
-          <button
-            onClick={addTodo}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Add
-          </button>
+      <div className="container mx-auto p-4">
+        <div className="flex items-center justify-between p-2 rounded">
+          <h1 className="text-2xl font-bold mb-4">Tasks</h1>
+          <Link href="/addTask">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+              Add Task
+            </button>
+          </Link>
         </div>
-        <TodoList todos={todos} onDelete={deleteTodo} onToggle={toggleTodo} />
+        <ul>
+          {tasks.map((task) => (
+            <li
+              key={task.id}
+              className="flex items-center justify-between p-2 bg-white rounded"
+            >
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => onToggle(task.id)}
+                  className="form-checkbox h-5 w-5 text-blue-600"
+                />
+                <span
+                  className={`text-lg ${
+                    task.completed
+                      ? "line-through text-gray-500"
+                      : "text-gray-800"
+                  }`}
+                >
+                  {task.title}
+                </span>
+              </div>
+              <button
+                onClick={() => onDelete(task.id)}
+                className="text-red-500 hover:text-red-700"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </main>
   );
-};
-export default Home;
+}
