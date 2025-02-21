@@ -3,26 +3,53 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Task } from "../types/todo";
 
+const API_URL = "http://localhost:8000/todos";
+
 export default function TaskPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   // const tasks: Task[] = JSON.parse(localStorage.getItem("tasks") || "[]");
 
+  const fetchTodos = async () => {
+    const response = await fetch(API_URL);
+    const tasks = await response.json();
+    if (Array.isArray(tasks) && tasks.length) {
+      setTasks(tasks);
+    }
+  };
   useEffect(() => {
-    setTasks(JSON.parse(localStorage.getItem("tasks") || "[]"));
+    fetchTodos();
+    // setTasks(JSON.parse(localStorage.getItem("tasks") || "[]"));
   }, []);
 
-  const onDelete = (id: string) => {
-    const updatedTasks = tasks.filter((task) => task.id !== id);
-    setTasks(updatedTasks);
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  const onDelete = async (id: number) => {
+    await fetch(`${API_URL}/${id}`, {
+      method: "DELETE",
+    });
+    console.log("Todo deleted:", id);
+    fetchTodos(); // Refresh the todo list
+    // const updatedTasks = tasks.filter((task) => task.id !== id);
+    // setTasks(updatedTasks);
+    // localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
-  const onToggle = (id: string) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
-    );
-    setTasks(updatedTasks);
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  const onToggle = async (id: number) => {
+    const todo = await fetch(`${API_URL}/${id}`).then((res) => res.json());
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    const updatedTodo = await response.json();
+    console.log("Todo updated:", updatedTodo);
+    fetchTodos();
+    // Refresh the todo list
+    // const updatedTasks = tasks.map((task) =>
+    //   task.id === id ? { ...task, completed: !task.completed } : task
+    // );
+    // setTasks(updatedTasks);
+    // localStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
 
   return (

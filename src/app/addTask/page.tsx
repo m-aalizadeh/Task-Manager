@@ -3,25 +3,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { Task } from "../../types/todo";
+
+const API_URL = "http://localhost:8000/todos";
 export default function AddTaskPage() {
   const router = useRouter();
 
   const [title, setTitle] = useState<string>("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (localStorage.getItem("tasks")) {
-      const tasks: Task[] = JSON.parse(localStorage.getItem("tasks") || "[]");
-      localStorage.setItem(
-        "tasks",
-        JSON.stringify([...tasks, { id: uuidv4(), title, completed: false }])
-      );
-    } else {
-      localStorage.setItem(
-        "tasks",
-        JSON.stringify([{ id: uuidv4(), title, completed: false }])
-      );
-    }
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+    });
+    const newTodo = await response.json();
     router.push("/");
   };
 
